@@ -1,0 +1,16 @@
+STATE_REGION_CODES = {
+    "Andhra Pradesh": "IN-AP", "Arunachal Pradesh": "IN-AR", "Assam": "IN-AS",
+    "Bihar": "IN-BR", "Chhattisgarh": "IN-CT", "Goa": "IN-GA", "Gujarat": "IN-GJ",
+    "Haryana": "IN-HR", "Himachal Pradesh": "IN-HP", "Jharkhand": "IN-JH",
+    "Karnataka": "IN-KA", "Kerala": "IN-KL", "Madhya Pradesh": "IN-MP",
+    "Maharashtra": "IN-MH", "Manipur": "IN-MN", "Meghalaya": "IN-ML",
+    "Mizoram": "IN-MZ", "Nagaland": "IN-NL", "Odisha": "IN-OR", "Punjab": "IN-PB",
+    "Rajasthan": "IN-RJ", "Sikkim": "IN-SK", "Tamil Nadu": "IN-TN",
+    "Telangana": "IN-TG", "Tripura": "IN-TR", "Uttar Pradesh": "IN-UP",
+    "Uttarakhand": "IN-UT", "West Bengal": "IN-WB",
+    "Delhi": "IN-DL", "Jammu and Kashmir": "IN-JK", "Ladakh": "IN-LA",
+    "Puducherry": "IN-PY", "Chandigarh": "IN-CH",
+    "Andaman and Nicobar Islands": "IN-AN",
+    "Dadra and Nagar Haveli and Daman and Diu": "IN-DH",
+    "Lakshadweep": "IN-LD",
+}
