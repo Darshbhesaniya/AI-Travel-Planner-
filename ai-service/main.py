@@ -20,15 +20,15 @@ def run_graph():
     initial_state = {
      "origin_city": "Ahmedabad",
      "origin_airport": "AMD",
-     "budget": 100000,
+     "budget": 150000,
      "currency": "INR",
-     "start_date": "25-09-2026",
-     "end_date": "30-09-2026",
+     "start_date": "30-09-2026",
+     "end_date": "07-10-2026",
      "travelers": 2,
      "interests": ["beach","food","nature"],
 
     "allowed_country": "India",
-    "allowed_state": "Gujarat",
+    "allowed_state": "Goa",
 
      "destination_options":[],
      "selected_destination": {},
@@ -76,6 +76,16 @@ def select_destination(thread_id: str, destination: str):
 
     return result
 
+@app.post("/select-flight")
+def select_flight(thread_id: str, flight_id: str):
+    config = {"configurable": {"thread_id": thread_id}}
+
+    result = travel_graph.invoke(
+        Command(resume=flight_id),
+        config=config
+    )
+
+    return result
 
 @app.get("/test-llm")
 def test_llm_endpoint():

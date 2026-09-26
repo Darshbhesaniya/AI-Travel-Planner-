@@ -1,163 +1,66 @@
 import os
-import re
-import math
+from datetime import datetime
+
 import serpapi
 from dotenv import load_dotenv
 
-from llm.llm_client import generate_text
 
 load_dotenv()
 
 SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
 
+def convert_date(date_str: str) -> str:
+    """DD-MM-YYYY -> YYYY-MM-DD"""
+    return datetime.strptime(date_str, "%d-%m-%Y").strftime("%Y-%m-%d")
 
-def resolve_location(location: str):
+def search_flights(
+        origin_airport: str,
+        destination_airport: str,
+        outbound_date: str,
+        return_date: str,
+        currency: str = "INR"
+    ):
     if not SERPAPI_API_KEY:
-        raise ValueError("SERPAPI_API_KEY is Not Found")
+        raise ValueError("SERPAPI_API_KEY is not configured")
 
-    client = serpapi.Client(
-        api_key=SERPAPI_API_KEY
-    )
+    client = serpapi.Client(api_key=SERPAPI_API_KEY)
 
     results = client.search({
-        "engine": "google_maps",
-        "q": location,
-        "type": "search",
-        "hl": "en",
-        "gl": "in"
+        "engine": "google_flights",
+        "departure_id": origin_airport,
+        "arrival_id": destination_airport,
+        "outbound_date": convert_date(outbound_date),
+        "return_date": convert_date(return_date),
+        "currency": currency,
+        "hl": "en"
     })
 
-    place_result = results.get("place_results",{})
+    raw_flights = results.get("best_flights",[]) + results.get("other_flights",[])
 
-    if not place_result:
-        return None
+    simplified = []
 
-    gps_coordinates = place_result.get(
-        "gps_coordinates",
-        {}
-    )
+    for flight in raw_flights:
+        legs = flight.get("flights", [])
 
-    return {
-       "name": place_result.get("title"),
-       "address": place_result.get("address"),
-       "country": place_result.get("country"),
-       "latitude": gps_coordinates.get("latitude"),
-       "longitude": gps_coordinates.get("longitude")
-
-    }
-
-
-def resolve_nearby_airports(
-        latitude: float,
-        longitude: float
-        ):
-    if not SERPAPI_API_KEY:
-        raise ValueError("SERPAPI_API_KEY is Not Found")
-
-    client = serpapi.Client(
-        api_key=SERPAPI_API_KEY
-    )
-
-    results = client.search({
-        "engine": "google_maps",
-        "q": "airports",
-        "ll": f"@{latitude},{longitude},12z",
-        "type": "search",
-        "hl": "en",
-        "gl": "in"
-    })
-
-    local_results = results.get(
-        "local_results",
-        []
-    )
-
-
-    airports = []
-    seen_airports = set()
-
-    for result in local_results:
-
-        result_types = result.get("types", [])
-
-        # Keep only actual airport listings
-        if "Airport" not in result_types:
+        if not legs:
             continue
 
-        name = result.get("title")
+        first_leg = legs[0]
+        last_leg = legs[-1]
 
-        if not name:
-            continue
-
-        normalized_name = name.lower()
-
-        if normalized_name in seen_airports:
-            continue
-
-        seen_airports.add(normalized_name)
-
-        gps_coordinates = result.get(
-            "gps_coordinates",
-            {}
-        )
-
-        airport_latitude = gps_coordinates.get("latitude")
-        airport_longitude = gps_coordinates.get("longitude")
-
-        if airport_latitude is None or airport_longitude is None:
-            continue
-
-        distance_km = calculate_distance(
-            latitude,
-            longitude,
-            airport_latitude,
-            airport_longitude
-            )
-
-        airports.append({
-            "name": name,
-            "address": result.get("address"),
-            "type": result.get("type"),
-            "latitude": gps_coordinates.get("latitude"),
-            "longitude": gps_coordinates.get("longitude"),
-            "distance_km": round(distance_km, 2)
+        simplified.append({
+            "airline": first_leg.get("airline"),
+            "price": flight.get("price"),
+            "trip_type": flight.get("type"),
+            "total_duration_minutes": flight.get("total_duration"),
+            "stops": len(legs) - 1,
+            "departure_airport": first_leg.get("departure_airport", {}).get("id"),
+            "departure_time": first_leg.get("departure_airport",{}).get("time"),
+            "arrival_airport": last_leg.get("arrival_airport",{}).get("id"),
+            "arrival_time": last_leg.get("arrival_airport",{}).get("time"),
+    
         })
 
-        nearby_airports = [
-            airport
-            for airport in airports
-            if airport["distance_km"] <= 100
-            ]
+    return simplified
 
-    return nearby_airports
-
-def calculate_distance(
-    latitude1: float,
-    longitude1: float,
-    latitude2: float,
-    longitude2: float
-):
-    earth_radius_km = 6371
-
-    latitude1 = math.radians(latitude1)
-    longitude1 = math.radians(longitude1)
-    latitude2 = math.radians(latitude2)
-    longitude2 = math.radians(longitude2)
-
-    delta_latitude = latitude2 - latitude1
-    delta_longitude = longitude2 - longitude1
-
-    a = (
-        math.sin(delta_latitude / 2) ** 2
-        + math.cos(latitude1)
-        * math.cos(latitude2)
-        * math.sin(delta_longitude / 2) ** 2
-    )
-
-    c = 2 * math.atan2(
-        math.sqrt(a),
-        math.sqrt(1 - a)
-    )
-
-    return earth_radius_km * c
 
