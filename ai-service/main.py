@@ -87,6 +87,17 @@ def select_flight(thread_id: str, flight_id: str):
 
     return result
 
+@app.post("/select-hotel")
+def select_hotel(thread_id: str, hotel_id: str):
+    config = {"configurable": {"thread_id": thread_id}}
+
+    result = travel_graph.invoke(
+        Command(resume=hotel_id),
+        config=config
+    )
+
+    return result
+
 @app.get("/test-llm")
 def test_llm_endpoint():
     result = test_llm()
