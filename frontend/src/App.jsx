@@ -1,38 +1,44 @@
-import { useState } from "react";
+import Header from "./components/Header";
+import StepIndicator from "./components/StepIndicator";
+import Loader from "./components/Loader";
+import ErrorMessage from "./components/ErrorMessage";
+import TripForm from "./components/form/TripForm";
+import SelectionStep from "./components/SelectionStep";
+import FinalPlan from "./components/FinalPlan";
+import { useMetadata } from "./hooks/useMetadata";
+import { useTripFlow } from "./hooks/useTripFlow";
 
-import React from 'react'
-
-const App = () => {
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const testBackend = async () => {
-    try {
-      setLoading(true);
-
-      const response = await fetch("http://localhost:5000/api/hello");
-      const data = await response.json();
-
-      setMessage(data.message);
-    } catch (error) {
-      console.error(error);
-      setMessage("Failed to connect to backend");
-    } finally {
-      setLoading(false);
-    }
-  };
+export default function App() {
+  const meta = useMetadata();
+  const flow = useTripFlow();
 
   return (
-   <div>
-      <h1>AI Travel Planner</h1>
+    <div className="min-h-screen bg-slate-50 text-slate-800">
+      <Header />
+      <main className="mx-auto max-w-4xl px-4 py-8">
+        <StepIndicator current={flow.stepIndex} />
 
-      <button onClick={testBackend}>
-        {loading ? "Connecting..." : "Test Backend"}
-      </button>
+        {flow.phase === "form" &&
+          (meta.loading ? (
+            <Loader text="Loading form..." />
+          ) : meta.error ? (
+            <ErrorMessage message={meta.error} />
+          ) : (
+            <TripForm meta={meta} onSubmit={flow.start} />
+          ))}
 
-      {message && <p>{message}</p>}
+        {flow.phase === "loading" && <Loader text={flow.loadingText} />}
+
+        {flow.phase === "select" && (
+          <SelectionStep pending={flow.pending} onSelect={flow.choose} />
+        )}
+
+        {flow.phase === "final" && <FinalPlan plan={flow.plan} onReset={flow.reset} />}
+
+        {flow.phase === "error" && (
+          <ErrorMessage message={flow.error} onRetry={flow.reset} />
+        )}
+      </main>
     </div>
-  )
+  );
 }
-
-export default App

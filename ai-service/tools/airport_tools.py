@@ -38,3 +38,14 @@ def get_destination_candidates(state_name: str = None):
             airports = [airport for airport in AIRPORTS if airport["iso_region"] == region ]
 
     return sorted(airports, key=lambda a: a["iata_code"])
+
+def get_origin_list():
+    """For UI Drop Down """
+
+    return sorted(
+        (
+            {"city": a["municipality"], "airport_code": a["iata_code"]}
+            for a in AIRPORTS
+        ),
+        key=lambda x: x["city"]
+    )
